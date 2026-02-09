@@ -164,7 +164,7 @@ app/
 ### Installation
 
 1. **Download the APK**
-   - Go to the [Releases](https://github.com/yourusername/automation-app/releases) page
+   - Go to the [Releases](https://github.com/SonalShaju/Automation_App/releases) page
    - Download the latest `app-release.apk` file
 
 2. **Enable Unknown Sources** (if not already enabled)
@@ -188,7 +188,7 @@ If you want to build from source:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/automation-app.git
+   git clone https://github.com/SonalShaju/Automation_App.git
    cd automation-app
    ```
 
