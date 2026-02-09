@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Automation App</string>
+    <string name="accessibility_service_description">This service enables automation features like detecting app launches and performing automated actions. It monitors which apps are open to trigger your automation rules and can perform gestures to toggle system settings.</string>
+</resources>

@@ -1,0 +1,149 @@
+AutomationApp - Codebase Summary for Architecture Re-planning
+
+1. Manifest Summary (Full AndroidManifest.xml)
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <application
+        android:name=".SmartAutomationApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AutomationApp"
+        android:enableOnBackInvokedCallback="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.AutomationApp">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <receiver android:name=".receiver.BootReceiver" android:enabled="true" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".receiver.HeadsetReceiver" android:enabled="true" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.HEADSET_PLUG" />
+                <action android:name="android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".receiver.BatteryReceiver" android:enabled="true" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_LOW" />
+                <action android:name="android.intent.action.BATTERY_OKAY" />
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".receiver.ConnectivityReceiver" android:enabled="true" android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.net.wifi.STATE_CHANGE" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".receiver.GeofenceBroadcastReceiver" android:enabled="true" android:exported="false" />
+        <receiver android:name=".receiver.TimeAlarmReceiver" android:enabled="true" android:exported="false" />
+        <provider android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup" android:exported="false" tools:node="merge">
+            <meta-data android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup" tools:node="remove" />
+        </provider>
+        <service android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="location|dataSync" tools:node="merge" />
+        <service android:name=".service.TriggerMonitorService"
+            android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
+    </application>
+</manifest>
+
+2. Gradle Config
+minSdk = 26
+targetSdk = 36
+compileSdk = 36
+
+3. File Structure (All .kt files with 1-sentence descriptions)
+
+
+
+4. Current Service Logic
+You have a class extending Service: TriggerMonitorService.kt
+onStartCommand method:
+
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    Log.d(TAG, "TriggerMonitorService started")
+    when (intent?.action) {
+        ACTION_START -> {
+            startForegroundService()
+            registerAllReceivers()
+            initializeScheduling()
+        }
+        ACTION_STOP -> {
+            stopForegroundService()
+            return START_NOT_STICKY
+        }
+    }
+    return START_STICKY
+}
+No AccessibilityService is currently implemented.
+
+5. Trigger Logic
+Trigger detection happens in TWO places:
+A. BroadcastReceivers (manifest): BatteryReceiver, ConnectivityReceiver, HeadsetReceiver, BootReceiver, TimeAlarmReceiver, GeofenceBroadcastReceiver
+B. Foreground Service (TriggerMonitorService): Registers dynamic receivers for battery, screen, airplane mode, Bluetooth, WiFi, network
+When a trigger is detected, receivers call workManagerScheduler.scheduleTriggerBasedEvaluation(triggerType)
+This enqueues a TriggerBasedWorker which finds all rules with that trigger type and executes them.
+
+6. Action Logic
+Actions are executed in domain/executor/ActionExecutor.kt
+Example method signature for toggleBluetooth:
+@SuppressLint("MissingPermission")
+private fun toggleBluetooth() { ... }
+
+Summary of Current Architecture Flow
+TRIGGER SOURCES: Manifest Receivers + TriggerMonitorService (Foreground)
+Both call WorkManagerScheduler.scheduleTriggerBasedEval(), which enqueues TriggerBasedWorker, which calls ExecuteRuleUseCase (TriggerEvaluator + ActionExecutor)
+
+Key Observations for Architecture Issues
+- Duplicate Receivers: Both manifest and service register for same events
+- WorkManager Constraints: setRequiresBatteryNotLow(true) may block execution
+- Android 13+ Limitations: Many actions just open Settings
+- No AccessibilityService: Cannot detect app launches or perform advanced actions
+- WakeLock Timeout: Service acquires WakeLock for only 10 minutes
+- Manifest Receiver Limitations: On Android 8+, implicit broadcasts may not work reliably in background
+
